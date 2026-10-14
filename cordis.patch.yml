@@ -1,0 +1,12 @@
+# dsh-archive-manager bundle patch: mounts the archive-manager plugin into a
+# dsh profile. The host half reads the harness's own archive set (plus the
+# active session list) and exposes archive / unarchive / permanent-delete
+# routes; the browser half (dsh/client.js) adds the "归档管理" sidebar entry and
+# its two-tab management panel.
+#
+# Archiving itself is delegated to the harness's native `archiveSession` /
+# `unarchiveSession`, so this plugin never re-implements archive semantics — it
+# only surfaces them alongside permanent deletion in one place.
+- insert:
+    - id: archive-manager
+      name: 'dsh-archive-manager'

@@ -1,0 +1,11 @@
+# 统一换行符：仓库内一律使用 LF，检出到工作区时由各平台自行处理。
+# 这样跨平台协作不会因为 CRLF/LF 差异产生整文件 diff。
+* text=auto eol=lf
+
+# 明确二进制文件，避免被当作文本处理
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zstd binary

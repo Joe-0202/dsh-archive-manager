@@ -1,0 +1,50 @@
+{
+  "name": "dsh-archive-manager",
+  "version": "0.1.0",
+  "description": "Archive management for DeepSeek Harness: one panel with two tabs (archived / active) where every session row offers archive or unarchive next to permanent delete. Reuses the harness's native archiving; deleting removes the session log and projection cache but never the bound workspace directory.",
+  "type": "module",
+  "main": "dsh/index.js",
+  "exports": {
+    ".": "./dsh/index.js",
+    "./dsh": "./dsh/index.js",
+    "./client": "./dsh/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dsh",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "archive",
+    "session",
+    "manage"
+  ],
+  "license": "MIT",
+  "author": "Joe-0202 (https://github.com/Joe-0202)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joe-0202/dsh-archive-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Joe-0202/dsh-archive-manager/issues"
+  },
+  "homepage": "https://github.com/Joe-0202/dsh-archive-manager#readme",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  }
+}
