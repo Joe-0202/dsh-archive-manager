@@ -147,7 +147,12 @@ function findCacheFile(sessionId) {
 
 /**
  * Best-effort read of a session's title and cwd from its projection cache.
- * The cache nests values as `{ <key>: { val } }`; both fields are optional.
+ *
+ * The cache stores the two fields in *different* shapes, which is easy to get
+ * wrong:
+ *   - `record.rows.title` is a wrapped projection record: { ver, seq, val }
+ *   - `record.identity.cwd` is a plain scalar string
+ * `findVal` therefore accepts both a `{ val }` wrapper and a bare string.
  */
 function readCacheInfo(sessionId) {
   const file = findCacheFile(sessionId);
@@ -155,9 +160,14 @@ function readCacheInfo(sessionId) {
   try {
     const data = JSON.parse(readFileSync(file, 'utf8'));
     function findVal(node, key, depth) {
-      if (depth > 6 || node == null || typeof node !== 'object') return undefined;
+      if (depth > 8 || node == null || typeof node !== 'object') return undefined;
       const hit = node[key];
-      if (hit && typeof hit === 'object' && hit.val !== undefined) return hit.val;
+      if (hit !== undefined && hit !== null) {
+        if (typeof hit === 'string') return hit; // plain scalar (cwd)
+        if (typeof hit === 'object' && !Array.isArray(hit) && 'val' in hit) {
+          if (typeof hit.val === 'string') return hit.val; // wrapped record (title)
+        }
+      }
       for (const k in node) {
         const r = findVal(node[k], key, depth + 1);
         if (r !== undefined) return r;
@@ -351,13 +361,14 @@ export function apply(ctx, config = {}) {
         for (const r of records) {
           const id = r.header.id;
           if (archivedSet.has(id) || visibleArchivedSet.has(id)) continue;
-          active.push(
-            rowFor(id, {
-              cwd: r.header.cwd ?? null,
-              live: r.live === true,
-              persisted: r.persisted === true,
-            }),
-          );
+          const extra = {
+            live: r.live === true,
+            persisted: r.persisted === true,
+          };
+          // Only override the cached cwd when sessionQuery actually supplies
+          // one, so an absent header.cwd cannot blank a path we already know.
+          if (typeof r.header.cwd === 'string' && r.header.cwd) extra.cwd = r.header.cwd;
+          active.push(rowFor(id, extra));
         }
       } catch {
         /* sessionQuery unavailable — the archived side still works */
