@@ -168,6 +168,15 @@ archive-manager/
 - 删除后的**归档记录**会在 DSH 下次启动时由插件自动清理；启动前它已从面板隐藏，
   页脚会以「待清理 N」提示。这一步不需要你手动操作。
 
+## 免责声明
+
+- 本项目是**第三方开源插件**，由社区开发者独立维护，**并非 DeepSeek 官方项目**，
+  与深度求索公司（DeepSeek）不存在隶属、赞助或背书关系。
+- 「DeepSeek」「DeepSeek Harness」等名称与商标归其各自所有者所有；
+  本项目仅在**说明兼容性**的意义上使用这些名称，未使用其标识或徽标。
+- 本插件会按你的操作**永久删除**会话数据。因误删造成的数据丢失，作者不承担责任
+  （软件按 MIT 许可「按原样」提供，见下）。
+
 ## 许可
 
 MIT（见 [LICENSE](./LICENSE)）
@@ -187,8 +196,7 @@ MIT（见 [LICENSE](./LICENSE)）
     HTTP 路由、Agent 工具。
   - `dsh/client.js` — Client 端：侧边栏入口、双 Tab 面板、自定义确认框、
     样式表注入（全部使用 harness 的 `--dsw-alias-*` 设计 token）。
-- **发布到 npm 前**请在 `package.json` 中补上仓库信息（`repository` / `bugs` / `homepage`）
-  与 `author`，然后：
+- **发布到 npm**（可选，当前主要分发方式是 GitHub 直装）：
 
   ```bash
   npm login
@@ -196,3 +204,6 @@ MIT（见 [LICENSE](./LICENSE)）
   ```
 
   发布后用户即可用 `dsh plugin --profile <profile> add dsh-archive-manager` 安装。
+  若该包名在 npm 上已被占用，改用 scope 形式（如 `@joe-0202/dsh-archive-manager`），
+  并同步更新 `cordis.patch.yml` 中 `insert[].name` 的取值。
+- **贡献授权**：提交 Pull Request 即表示你同意你的贡献以本项目的 MIT 许可发布。
