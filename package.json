@@ -13,6 +13,8 @@
   "files": [
     "dsh",
     "cordis.patch.yml",
+    "assets",
+    "screenshots.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

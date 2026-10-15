@@ -60,6 +60,16 @@ DSH 自带会话归档：归档后会话数据**完整保留在磁盘**，只是
 
 `archive_list` / `archive_add` / `archive_remove` / `archive_delete`，可用自然语言驱动。
 
+## 界面预览
+
+**已归档**页签——每条提供【取消归档】与【删除】，并显示绑定的工作目录与磁盘数据状态：
+
+![已归档会话](assets/screenshot-2-archived-sessions.png)
+
+**活跃会话**页签——【归档】与【删除】并排：
+
+![活跃会话](assets/screenshot-1-active-sessions.png)
+
 ## 安装
 
 > 下面命令里的 `<profile>` 换成你的 profile 名；DSH 桌面端默认是 `desktop`。

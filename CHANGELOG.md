@@ -6,6 +6,21 @@
 
 ## [Unreleased]
 
+### 新增
+
+- **界面截图**：`assets/` 提供两张界面截图（已归档 / 活跃会话），并通过仓库根的
+  `screenshots.json` 声明，供 dsh-market 等插件的详情页展示。格式遵循
+  [awesome-dsh-plugin 收录约定](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md)。
+
+### 修复
+
+- **已归档会话的绑定工作目录无法显示**：投影缓存对两类字段使用不同存储形态
+  （`record.rows.title` 是包装记录 `{ ver, seq, val }`，`record.identity.cwd` 是纯字符串），
+  而读取逻辑此前只识别包装形态，导致 `cwd` 恒为空、「已归档」页签缺少文件夹路径。
+  以 7 个真实缓存文件对照验证：修复前 0/7 读到路径，修复后 7/7。
+- 活跃会话仅在 `sessionQuery` 确实提供 `cwd` 时才覆盖缓存值，避免缺失的
+  `header.cwd` 把已读到的路径清空。
+
 ## [0.1.0] - 2026-10-14
 
 首个版本。
