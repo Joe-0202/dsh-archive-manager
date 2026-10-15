@@ -75,7 +75,7 @@ DSH 自带会话归档：归档后会话数据**完整保留在磁盘**，只是
 > 下面命令里的 `<profile>` 换成你的 profile 名；DSH 桌面端默认是 `desktop`。
 > 安装完成后**重启 DSH**，侧边栏底部即出现「归档管理」图标。
 
-### 方式一：从 GitHub 直接安装（推荐，无需 npm）
+### 方式一：从 GitHub 直接安装（推荐）
 
 ```bash
 dsh plugin --profile <profile> add github:Joe-0202/dsh-archive-manager
@@ -95,12 +95,6 @@ dsh plugin --profile <profile> add github:Joe-0202/dsh-archive-manager#v0.1.0
 
 ```bash
 dsh plugin --profile <profile> add link:<解压目录的绝对路径>
-```
-
-### 方式三：npm（发布后可用）
-
-```bash
-dsh plugin --profile <profile> add dsh-archive-manager
 ```
 
 ### 卸载
