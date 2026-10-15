@@ -14,8 +14,9 @@
   以及侧边栏入口的提示文字均随之切换。
 - **英文技术文档**：`README.md` 改为英文（GitHub 默认展示），中文版移至 `README.zh.md`，
   两个文件顶部互相链接。
-- **界面截图**：`assets/` 提供两张界面截图（已归档 / 活跃会话），并通过仓库根的
-  `screenshots.json` 声明，供 dsh-market 等插件的详情页展示。格式遵循
+- **界面截图（中英双语）**：`assets/` 提供四张界面截图——中英文各两张（已归档 / 活跃会话）。
+  英文文档引用英文截图、中文文档引用中文截图；仓库根的 `screenshots.json` 声明全部四张
+  （英文在前），供 dsh-market 等插件的详情页展示双语界面。格式遵循
   [awesome-dsh-plugin 收录约定](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md)。
 
 ### 变更

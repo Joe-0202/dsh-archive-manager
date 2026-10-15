@@ -65,11 +65,11 @@ Entries in the archived list whose data was deleted long ago and only an archive
 
 The **Archived** tab — every entry offers [Unarchive] and [Delete], and shows the bound workspace directory and on-disk data status:
 
-![Archived sessions](assets/screenshot-2-archived-sessions.png)
+![Archived sessions](assets/screenshot-2-archived-sessions.en.png)
 
 The **Active sessions** tab — [Archive] and [Delete] side by side:
 
-![Active sessions](assets/screenshot-1-active-sessions.png)
+![Active sessions](assets/screenshot-1-active-sessions.en.png)
 
 ## Installation
 
