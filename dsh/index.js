@@ -222,7 +222,7 @@ async function removePath(subprocess, absPath) {
   } catch {
     /* ignore */
   }
-  return { ok: false, error: `删除失败（exit code ${outcome.exitCode}）: ${absPath}` };
+  return { ok: false, error: `Failed to delete (exit code ${outcome.exitCode}): ${absPath}` };
 }
 
 /**
@@ -383,13 +383,13 @@ export function apply(ctx, config = {}) {
   async function archiveById(sessionId) {
     const wr = workspaceRegistry();
     if (!wr) {
-      return { sessionId, archived: false, errors: ['workspaceRegistry 服务不可用'] };
+      return { sessionId, archived: false, errors: ['workspaceRegistry service unavailable'] };
     }
     try {
       await wr.archiveSession(sessionId, { stopActivity: true });
       return { sessionId, archived: true, errors: [] };
     } catch (err) {
-      return { sessionId, archived: false, errors: [`归档失败：${err?.message ?? String(err)}`] };
+      return { sessionId, archived: false, errors: [`Archive failed: ${err?.message ?? String(err)}`] };
     }
   }
 
@@ -397,13 +397,13 @@ export function apply(ctx, config = {}) {
   async function unarchiveById(sessionId) {
     const wr = workspaceRegistry();
     if (!wr) {
-      return { sessionId, unarchived: false, errors: ['workspaceRegistry 服务不可用'] };
+      return { sessionId, unarchived: false, errors: ['workspaceRegistry service unavailable'] };
     }
     try {
       await wr.unarchiveSession(sessionId);
       return { sessionId, unarchived: true, errors: [] };
     } catch (err) {
-      return { sessionId, unarchived: false, errors: [`取消归档失败：${err?.message ?? String(err)}`] };
+      return { sessionId, unarchived: false, errors: [`Unarchive failed: ${err?.message ?? String(err)}`] };
     }
   }
 
@@ -428,7 +428,7 @@ export function apply(ctx, config = {}) {
     const logDir = findSessionDir(sessionId);
     if (logDir) {
       if (!sp) {
-        result.errors.push('删除会话数据失败：subprocess 服务不可用');
+        result.errors.push('Failed to delete session data: subprocess service unavailable');
       } else {
         const rm = await removePath(sp, logDir);
         if (rm.ok) {
@@ -442,7 +442,7 @@ export function apply(ctx, config = {}) {
             /* bucket already gone */
           }
         } else {
-          result.errors.push(rm.error ?? '删除会话数据失败');
+          result.errors.push(rm.error ?? 'Failed to delete session data');
         }
       }
     } else {
@@ -452,11 +452,11 @@ export function apply(ctx, config = {}) {
     const cacheFile = findCacheFile(sessionId);
     if (cacheFile) {
       if (!sp) {
-        result.errors.push('删除会话缓存失败：subprocess 服务不可用');
+        result.errors.push('Failed to delete session cache: subprocess service unavailable');
       } else {
         const rm = await removePath(sp, cacheFile);
         if (rm.ok) result.cacheDeleted = true;
-        else result.errors.push(rm.error ?? '删除会话缓存失败');
+        else result.errors.push(rm.error ?? 'Failed to delete session cache');
       }
     } else {
       result.cacheDeleted = true; // already gone
@@ -511,16 +511,16 @@ export function apply(ctx, config = {}) {
         schema: { type: 'object', additionalProperties: true },
         render: (_args, value) => {
           const line = (it) =>
-            `${it.sessionId}${it.title ? ` (${it.title})` : ''}${it.dataExists === false ? ' [数据已不存在]' : ''}`;
+            `${it.sessionId}${it.title ? ` (${it.title})` : ''}${it.dataExists === false ? ' [data missing]' : ''}`;
           const archived = Array.isArray(value.archived) ? value.archived : [];
           const active = Array.isArray(value.active) ? value.active : [];
           return [{
             type: 'text',
             text:
-              `已归档（${archived.length}）：\n` +
-              (archived.length ? archived.map(line).map((s) => '  ' + s).join('\n') : '  （无）') +
-              `\n活跃会话（${active.length}）：\n` +
-              (active.length ? active.map(line).map((s) => '  ' + s).join('\n') : '  （无）'),
+              `Archived (${archived.length}):\n` +
+              (archived.length ? archived.map(line).map((s) => '  ' + s).join('\n') : '  (none)') +
+              `\nActive (${active.length}):\n` +
+              (active.length ? active.map(line).map((s) => '  ' + s).join('\n') : '  (none)'),
           }];
         },
       },
@@ -542,7 +542,7 @@ export function apply(ctx, config = {}) {
         schema: { type: 'object', additionalProperties: true },
         render: (_args, value) => [{
           type: 'text',
-          text: `归档 ${value.sessionId}：${value.archived ? '成功' : '失败'}${value.errors?.length ? `\n错误：${value.errors.join('；')}` : ''}`,
+          text: `Archived ${value.sessionId}: ${value.archived ? 'ok' : 'failed'}${value.errors?.length ? `\nErrors: ${value.errors.join('; ')}` : ''}`,
         }],
       },
       async execute(args) {
@@ -563,7 +563,7 @@ export function apply(ctx, config = {}) {
         schema: { type: 'object', additionalProperties: true },
         render: (_args, value) => [{
           type: 'text',
-          text: `取消归档 ${value.sessionId}：${value.unarchived ? '成功' : '失败'}${value.errors?.length ? `\n错误：${value.errors.join('；')}` : ''}`,
+          text: `Unarchived ${value.sessionId}: ${value.unarchived ? 'ok' : 'failed'}${value.errors?.length ? `\nErrors: ${value.errors.join('; ')}` : ''}`,
         }],
       },
       async execute(args) {
@@ -574,7 +574,7 @@ export function apply(ctx, config = {}) {
     tools.register({
       name: 'archive_delete',
       description:
-        'Permanently delete one archived session: remove its session log and projection cache, then drop it from the archive set. The bound workspace directory is left untouched. Irreversible.',
+        'Permanently delete one archived session: remove its session log and projection cache, then queue its archive entry for cleanup at the next DSH start. The bound workspace directory is left untouched. Irreversible.',
       parameters: {
         type: 'object',
         properties: { sessionId: { type: 'string', description: 'Archived session id to delete permanently.' } },
@@ -585,9 +585,11 @@ export function apply(ctx, config = {}) {
         render: (_args, value) => [{
           type: 'text',
           text:
-            `已删除归档会话 ${value.sessionId}：日志=${value.logDirDeleted}, 缓存=${value.cacheDeleted}` +
-            (value.queued ? '；归档记录已排队，将在 DSH 下次启动时自动清理' : '') +
-            (value.errors?.length ? `\n错误：${value.errors.join('；')}` : ''),
+            `Deleted archived session ${value.sessionId}: log=${value.logDirDeleted}, cache=${value.cacheDeleted}` +
+            (value.queued
+              ? '; its archive entry is queued and will be swept at the next DSH start'
+              : '') +
+            (value.errors?.length ? `\nErrors: ${value.errors.join('; ')}` : ''),
         }],
       },
       async execute(args) {
@@ -701,7 +703,7 @@ export function apply(ctx, config = {}) {
           }
           const sp = subprocess();
           if (!sp) {
-            json(res, 503, { error: 'subprocess 服务不可用' });
+            json(res, 503, { error: 'subprocess service unavailable' });
             return;
           }
           json(res, 200, await revealPath(sp, path));

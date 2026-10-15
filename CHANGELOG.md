@@ -8,9 +8,20 @@
 
 ### 新增
 
+- **界面双语，跟随 DSH 语言自动切换**：Client 端接入 harness 的 `locale` 服务——为每个
+  可用语言注册词典、读取当前语言渲染全部文案，并在语言切换时自动重渲染（无需重开面板）。
+  服务不可用时回退到 `navigator.language`，最终回退英文。界面、确认框、徽章、页脚
+  以及侧边栏入口的提示文字均随之切换。
+- **英文技术文档**：`README.md` 改为英文（GitHub 默认展示），中文版移至 `README.zh.md`，
+  两个文件顶部互相链接。
 - **界面截图**：`assets/` 提供两张界面截图（已归档 / 活跃会话），并通过仓库根的
   `screenshots.json` 声明，供 dsh-market 等插件的详情页展示。格式遵循
   [awesome-dsh-plugin 收录约定](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md)。
+
+### 变更
+
+- Host 端的工具描述、工具输出与错误消息统一改为英文。Host 侧没有 locale 服务，
+  且这些文本面向 Agent 而非终端用户；面向用户的文案由 Client 端按语言渲染。
 
 ### 修复
 

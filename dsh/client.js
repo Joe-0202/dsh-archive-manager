@@ -131,6 +131,194 @@ window.__ModuleLoader__.load({
       });
     }
 
+    // ── i18n ─────────────────────────────────────────────────────────────────
+    // The harness ships a client-side `locale` service (a dictionary registry
+    // plus the active locale). We register our dictionaries there — one entry per
+    // locale the harness declares — and read the active locale through it, so the
+    // panel follows whatever language the user selected in the app. If the service
+    // is absent we fall back to `navigator.language`, and finally to English.
+    var NS = 'archive-manager';
+    var pluginCtx = null;
+
+    var DICT = {
+      zh: {
+        entry: '归档管理',
+        panelTitle: '归档管理',
+        close: '关闭',
+        tabArchived: '已归档',
+        tabActive: '活跃会话',
+        actArchive: '归档',
+        actUnarchive: '取消归档',
+        actDelete: '删除',
+        actRefresh: '刷新',
+        actBusy: '处理中…',
+        untitled: '无标题会话',
+        badgeLog: '会话日志',
+        badgeCache: '缓存',
+        badgeGone: '数据已不存在',
+        badgeLive: '运行中',
+        noteArchived: '已归档会话的数据仍完整保留在磁盘上；删除才会真正移除数据。',
+        noteActive: '归档后会话从活跃列表隐藏，数据保持原样，可随时取消归档。',
+        loading: '正在加载…',
+        emptyArchivedTitle: '没有已归档的会话',
+        emptyArchivedHint: '归档任意会话后，它会出现在这里',
+        emptyActiveTitle: '没有活跃会话',
+        emptyActiveHint: '新建对话后会出现在这里',
+        foot: '已归档 {archived}',
+        footActive: ' · 活跃 {active}',
+        footPending: ' · 待清理 {pending}',
+        reveal: '在资源管理器中打开',
+        confirmTitle: '彻底删除会话',
+        confirmLabel: '会话',
+        confirmBody: '将删除该会话的会话日志与投影缓存，此操作不可恢复。',
+        confirmSafe: '绑定的工作目录不会被删除。',
+        confirmCancel: '取消',
+        confirmOk: '彻底删除',
+        confirmBusy: '删除中…',
+        errArchive: '归档失败：',
+        errUnarchive: '取消归档失败：',
+        errDelete: '删除失败：',
+        listSep: '；',
+      },
+      en: {
+        entry: 'Archive manager',
+        panelTitle: 'Archive manager',
+        close: 'Close',
+        tabArchived: 'Archived',
+        tabActive: 'Active',
+        actArchive: 'Archive',
+        actUnarchive: 'Unarchive',
+        actDelete: 'Delete',
+        actRefresh: 'Refresh',
+        actBusy: 'Working…',
+        untitled: 'Untitled session',
+        badgeLog: 'Session log',
+        badgeCache: 'Cache',
+        badgeGone: 'Data missing',
+        badgeLive: 'Running',
+        noteArchived: 'Archived sessions keep their data on disk — only deleting removes it.',
+        noteActive:
+          'Archiving hides a session from the active list and keeps its data intact; you can unarchive it at any time.',
+        loading: 'Loading…',
+        emptyArchivedTitle: 'No archived sessions',
+        emptyArchivedHint: 'Archive a session and it will show up here',
+        emptyActiveTitle: 'No active sessions',
+        emptyActiveHint: 'Start a conversation and it will show up here',
+        foot: '{archived} archived',
+        footActive: ' · {active} active',
+        footPending: ' · {pending} pending cleanup',
+        reveal: 'Open in file manager',
+        confirmTitle: 'Delete session permanently',
+        confirmLabel: 'Session',
+        confirmBody: 'This removes the session log and its projection cache. It cannot be undone.',
+        confirmSafe: 'The bound workspace folder is not deleted.',
+        confirmCancel: 'Cancel',
+        confirmOk: 'Delete permanently',
+        confirmBusy: 'Deleting…',
+        errArchive: 'Archive failed: ',
+        errUnarchive: 'Unarchive failed: ',
+        errDelete: 'Delete failed: ',
+        listSep: '; ',
+      },
+    };
+
+    function localeService() {
+      try {
+        return (pluginCtx && typeof pluginCtx.get === 'function' ? pluginCtx.get('locale') : null) || null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function activeLocaleId() {
+      var loc = localeService();
+      if (loc && typeof loc.getLocale === 'function') {
+        try {
+          var snap = loc.getLocale();
+          if (snap && typeof snap.active === 'string' && snap.active) return snap.active;
+        } catch (_) {
+          /* fall through to the browser language */
+        }
+      }
+      try {
+        if (typeof navigator !== 'undefined') {
+          return navigator.language || (navigator.languages && navigator.languages[0]) || '';
+        }
+      } catch (_) {
+        /* no navigator */
+      }
+      return '';
+    }
+
+    function langKey() {
+      return String(activeLocaleId() || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
+    }
+
+    /** Translate one key, interpolating `{name}` placeholders; English is the fallback. */
+    function t(key, params) {
+      var primary = DICT[langKey()] || DICT.en;
+      var s = primary[key] !== undefined ? primary[key] : DICT.en[key];
+      if (s === undefined) return key;
+      if (params) {
+        for (var k in params) {
+          if (Object.prototype.hasOwnProperty.call(params, k)) {
+            s = s.split('{' + k + '}').join(String(params[k]));
+          }
+        }
+      }
+      return s;
+    }
+
+    /** Register our dictionaries for every locale the harness currently declares. */
+    function registerDictionaries() {
+      var loc = localeService();
+      if (!loc || typeof loc.register !== 'function') return;
+      var ids = [];
+      try {
+        var snap = typeof loc.getLocale === 'function' ? loc.getLocale() : null;
+        if (snap && snap.locales && snap.locales.length) {
+          for (var i = 0; i < snap.locales.length; i++) {
+            var id = snap.locales[i] && snap.locales[i].id;
+            if (typeof id === 'string' && id) ids.push(id);
+          }
+        }
+      } catch (_) {
+        /* fall back to the common tags below */
+      }
+      if (!ids.length) ids = ['zh-CN', 'en-US'];
+      for (var j = 0; j < ids.length; j++) {
+        var lid = ids[j];
+        var dict = String(lid).toLowerCase().indexOf('zh') === 0 ? DICT.zh : DICT.en;
+        try {
+          loc.register(NS, lid, dict);
+        } catch (_) {
+          /* already registered, or an unsupported tag — t() still works */
+        }
+      }
+    }
+
+    /** Subscribe to locale changes; returns a disposer. */
+    function onLocaleChange(fn) {
+      var loc = localeService();
+      if (loc && typeof loc.subscribe === 'function') {
+        try {
+          var off = loc.subscribe(fn);
+          if (typeof off === 'function') return off;
+        } catch (_) {
+          /* fall through to the event */
+        }
+      }
+      try {
+        if (pluginCtx && typeof pluginCtx.on === 'function') {
+          var off2 = pluginCtx.on('locale/change', fn);
+          if (typeof off2 === 'function') return off2;
+        }
+      } catch (_) {
+        /* no locale plumbing — the panel just keeps its current language */
+      }
+      return function () {};
+    }
+
     // ── Components ───────────────────────────────────────────────────────────
     function makeComponents(React) {
       function icon(size, children) {
@@ -228,11 +416,11 @@ window.__ModuleLoader__.load({
               React.createElement(
                 'div',
                 { className: 'dsam-confirmTarget' },
-                React.createElement('span', { className: 'dsam-confirmLabel' }, '会话'),
-                React.createElement('span', { className: 'dsam-confirmValue', title: it.title || it.sessionId || '' }, it.title || '无标题会话'),
+                React.createElement('span', { className: 'dsam-confirmLabel' }, t('confirmLabel')),
+                React.createElement('span', { className: 'dsam-confirmValue', title: it.title || it.sessionId || '' }, it.title || t('untitled')),
               ),
-              React.createElement('p', { className: 'dsam-confirmLine' }, '将删除该会话的会话日志与投影缓存，此操作不可恢复。'),
-              React.createElement('p', { className: 'dsam-confirmLine dsam-confirmSafe' }, '绑定的工作目录不会被删除。'),
+              React.createElement('p', { className: 'dsam-confirmLine' }, t('confirmBody')),
+              React.createElement('p', { className: 'dsam-confirmLine dsam-confirmSafe' }, t('confirmSafe')),
             ),
             React.createElement(
               'div',
@@ -240,12 +428,12 @@ window.__ModuleLoader__.load({
               React.createElement(
                 'button',
                 { type: 'button', className: 'dsam-btn', onClick: props.onCancel, disabled: busy },
-                '取消',
+                t('confirmCancel'),
               ),
               React.createElement(
                 'button',
                 { type: 'button', className: 'dsam-btn dsam-btn--danger', onClick: props.onConfirm, disabled: busy },
-                busy ? '删除中…' : '彻底删除',
+                busy ? t('confirmBusy') : t('confirmOk'),
               ),
             ),
           ),
@@ -262,7 +450,7 @@ window.__ModuleLoader__.load({
           {
             type: 'button',
             className: 'dsam-rowPath',
-            title: '在资源管理器中打开',
+            title: t('reveal'),
             disabled: busy,
             onClick: function (e) {
               e.preventDefault();
@@ -283,12 +471,12 @@ window.__ModuleLoader__.load({
         var it = props.item;
         var badges = [];
         if (it.dataExists === false) {
-          badges.push(React.createElement('span', { key: 'ghost', className: 'dsam-badge dsam-badge--warn' }, '数据已不存在'));
+          badges.push(React.createElement('span', { key: 'ghost', className: 'dsam-badge dsam-badge--warn' }, t('badgeGone')));
         } else {
-          badges.push(React.createElement('span', { key: 'log', className: 'dsam-badge dsam-badge--ok' }, '会话日志'));
-          if (it.hasCache) badges.push(React.createElement('span', { key: 'cache', className: 'dsam-badge dsam-badge--ok' }, '缓存'));
+          badges.push(React.createElement('span', { key: 'log', className: 'dsam-badge dsam-badge--ok' }, t('badgeLog')));
+          if (it.hasCache) badges.push(React.createElement('span', { key: 'cache', className: 'dsam-badge dsam-badge--ok' }, t('badgeCache')));
         }
-        if (it.live) badges.push(React.createElement('span', { key: 'live', className: 'dsam-badge dsam-badge--idle' }, '运行中'));
+        if (it.live) badges.push(React.createElement('span', { key: 'live', className: 'dsam-badge dsam-badge--idle' }, t('badgeLive')));
         return React.createElement('div', { className: 'dsam-meta' }, badges);
       }
 
@@ -302,7 +490,7 @@ window.__ModuleLoader__.load({
           React.createElement(
             'div',
             { className: 'dsam-rowMain' },
-            React.createElement('div', { className: 'dsam-rowTitle', title: it.title || '' }, it.title || '无标题会话'),
+            React.createElement('div', { className: 'dsam-rowTitle', title: it.title || '' }, it.title || t('untitled')),
             React.createElement('div', { className: 'dsam-rowId', title: it.sessionId }, it.sessionId),
             it.cwd ? React.createElement(PathButton, { path: it.cwd }) : null,
             React.createElement(MetaBadges, { item: it }),
@@ -315,19 +503,19 @@ window.__ModuleLoader__.load({
                   'button',
                   { type: 'button', className: 'dsam-btn', disabled: busy, onClick: function () { props.onUnarchive(it); } },
                   React.createElement(RestoreIcon, { size: 13 }),
-                  '取消归档',
+                  t('actUnarchive'),
                 )
               : React.createElement(
                   'button',
                   { type: 'button', className: 'dsam-btn', disabled: busy, onClick: function () { props.onArchive(it); } },
                   React.createElement(ArchiveIcon, { size: 13 }),
-                  '归档',
+                  t('actArchive'),
                 ),
             React.createElement(
               'button',
               { type: 'button', className: 'dsam-btn dsam-btn--danger', disabled: busy, onClick: function () { props.onDelete(it); } },
               React.createElement(TrashIcon, { size: 13 }),
-              '删除',
+              t('actDelete'),
             ),
           ),
         );
@@ -381,6 +569,16 @@ window.__ModuleLoader__.load({
           load();
         }, []);
 
+        // Re-render when the app language changes, so everything above follows
+        // the user's selection without reopening the panel.
+        var langTick = React.useState(0);
+        var bumpLang = langTick[1];
+        React.useEffect(function () {
+          return onLocaleChange(function () {
+            bumpLang(function (v) { return v + 1; });
+          });
+        }, []);
+
         /** Perform one action, then reload the list. */
         function execute(url, item, failText) {
           setBusy(true);
@@ -389,7 +587,7 @@ window.__ModuleLoader__.load({
           postJson(url, { sessionId: item.sessionId })
             .then(function (res) {
               if (res && res.errors && res.errors.length) {
-                setError(res.errors.join('；'));
+                setError(res.errors.join(t('listSep')));
               }
               // A queued delete IS a success: the data is gone and the row is
               // hidden from the panel. The leftover archive entry is swept at
@@ -440,10 +638,10 @@ window.__ModuleLoader__.load({
                 'div',
                 { className: 'dsam-head' },
                 React.createElement('span', { className: 'dsam-headIcon' }, React.createElement(ArchiveIcon, { size: 17 })),
-                React.createElement('h3', { className: 'dsam-title' }, '归档管理'),
+                React.createElement('h3', { className: 'dsam-title' }, t('panelTitle')),
                 React.createElement(
                   'button',
-                  { type: 'button', className: 'dsam-iconBtn', onClick: props.onClose, title: '关闭', 'aria-label': '关闭' },
+                  { type: 'button', className: 'dsam-iconBtn', onClick: props.onClose, title: t('close'), 'aria-label': t('close') },
                 React.createElement(CloseIcon, { size: 15 }),
               ),
             ),
@@ -459,7 +657,7 @@ window.__ModuleLoader__.load({
                   className: 'dsam-tab' + (tab === 'archived' ? ' is-on' : ''),
                   onClick: function () { setTab('archived'); },
                 },
-                '已归档',
+                t('tabArchived'),
                 React.createElement('span', { className: 'dsam-count' }, data === null ? '–' : String(archived.length)),
               ),
               React.createElement(
@@ -471,7 +669,7 @@ window.__ModuleLoader__.load({
                   className: 'dsam-tab' + (tab === 'active' ? ' is-on' : ''),
                   onClick: function () { setTab('active'); },
                 },
-                '活跃会话',
+                t('tabActive'),
                 React.createElement('span', { className: 'dsam-count' }, data === null ? '–' : String(active.length)),
               ),
             ),
@@ -481,20 +679,20 @@ window.__ModuleLoader__.load({
               error ? React.createElement('div', { className: 'dsam-error' }, error) : null,
               notice ? React.createElement('div', { className: 'dsam-notice' }, notice) : null,
               tab === 'archived'
-                ? React.createElement('div', { className: 'dsam-note' }, '已归档会话的数据仍完整保留在磁盘上；删除才会真正移除数据。')
-                : React.createElement('div', { className: 'dsam-note' }, '归档后会话从活跃列表隐藏，数据保持原样，可随时取消归档。'),
+                ? React.createElement('div', { className: 'dsam-note' }, t('noteArchived'))
+                : React.createElement('div', { className: 'dsam-note' }, t('noteActive')),
               data === null
-                ? React.createElement('div', { className: 'dsam-loading' }, '正在加载…')
+                ? React.createElement('div', { className: 'dsam-loading' }, t('loading'))
                 : list.length === 0
                   ? React.createElement(
                       'div',
                       { className: 'dsam-empty' },
                       React.createElement(ArchiveIcon, { size: 24 }),
-                      React.createElement('div', { className: 'dsam-emptyTitle' }, tab === 'archived' ? '没有已归档的会话' : '没有活跃会话'),
+                      React.createElement('div', { className: 'dsam-emptyTitle' }, tab === 'archived' ? t('emptyArchivedTitle') : t('emptyActiveTitle')),
                       React.createElement(
                         'div',
                         { className: 'dsam-emptyHint' },
-                        tab === 'archived' ? '归档任意会话后，它会出现在这里' : '新建对话后会出现在这里',
+                        tab === 'archived' ? t('emptyArchivedHint') : t('emptyActiveHint'),
                       ),
                     )
                   : list.map(function (it) {
@@ -504,13 +702,13 @@ window.__ModuleLoader__.load({
                         tab: tab,
                         busy: busy,
                         onArchive: function (item) {
-                          run(ROUTES.archive, item, null, '归档失败：');
+                          run(ROUTES.archive, item, null, t('errArchive'));
                         },
                         onUnarchive: function (item) {
-                          run(ROUTES.unarchive, item, null, '取消归档失败：');
+                          run(ROUTES.unarchive, item, null, t('errUnarchive'));
                         },
                         onDelete: function (item) {
-                          run(ROUTES.del, item, true, '删除失败：');
+                          run(ROUTES.del, item, true, t('errDelete'));
                         },
                       });
                     }),
@@ -523,20 +721,21 @@ window.__ModuleLoader__.load({
                 { className: 'dsam-footInfo' },
                 data === null
                   ? ''
-                  : '已归档 ' + archived.length + ' · 活跃 ' + active.length +
-                    (data.pendingCount > 0 ? ' · 待清理 ' + data.pendingCount : ''),
+                  : t('foot', { archived: archived.length }) +
+                    t('footActive', { active: active.length }) +
+                    (data.pendingCount > 0 ? t('footPending', { pending: data.pendingCount }) : ''),
               ),
               React.createElement(
                 'button',
                 { type: 'button', className: 'dsam-btn', disabled: busy, onClick: function () { load(); } },
-                busy ? '处理中…' : '刷新',
+                busy ? t('actBusy') : t('actRefresh'),
               ),
             ),
           ),
         ),
           pending
             ? React.createElement(ConfirmDialog, {
-                title: '彻底删除会话',
+                title: t('confirmTitle'),
                 item: pending.item,
                 busy: busy,
                 onCancel: function () { setPending(null); },
@@ -565,12 +764,13 @@ window.__ModuleLoader__.load({
     }
 
     function apply(ctx) {
+      pluginCtx = ctx;
       var React;
       var ReactDOM;
       try {
         React = require('react');
       } catch (e) {
-        console.error('[archive-manager] react 不可用，跳过 UI：' + String(e));
+        console.error('[archive-manager] react unavailable, skipping UI: ' + String(e));
         return;
       }
       try {
@@ -580,6 +780,7 @@ window.__ModuleLoader__.load({
       }
 
       injectCss();
+      registerDictionaries();
 
       var C = makeComponents(React);
       var ArchivePanel = C.ArchivePanel;
@@ -613,10 +814,12 @@ window.__ModuleLoader__.load({
         else if (ReactDOM.render) ReactDOM.render(el, rootEl);
       }
 
-      // Sidebar-footer entry.
+      // Sidebar-footer entry. The button calls `t()` on every render, so its
+      // tooltip follows a language switch; the slot `label` is captured once at
+      // registration time (the slot catalog is not re-read on locale change).
       ctx.slots.inject('sidebar.footer.action', function* () {
         yield ctx.slots.register(
-          { name: 'sidebar.footer.action', id: 'archive-manager-entry', order: 89, label: '归档管理' },
+          { name: 'sidebar.footer.action', id: 'archive-manager-entry', order: 89, label: t('entry') },
           function () {
             return React.createElement(
               'button',
@@ -624,8 +827,8 @@ window.__ModuleLoader__.load({
                 type: 'button',
                 className: 'dsam-iconBtn',
                 onClick: function () { setPanelOpen(true); },
-                title: '归档管理',
-                'aria-label': '归档管理',
+                title: t('entry'),
+                'aria-label': t('entry'),
               },
               React.createElement(C.ArchiveIcon, { size: 16 }),
             );
