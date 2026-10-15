@@ -1,6 +1,18 @@
 # dsh-archive-manager
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/Joe-0202/dsh-archive-manager)](https://github.com/Joe-0202/dsh-archive-manager/releases)
+[![Platform](https://img.shields.io/badge/platform-DeepSeek%20Harness-4f6ef7)](https://github.com/Joe-0202/dsh-archive-manager)
+
 归档管理插件：集中管理 DeepSeek Harness（DSH）的**已归档会话**与**活跃会话**。
+
+> **快速安装**（装完重启 DSH 即可）
+>
+> ```bash
+> dsh plugin --profile desktop add github:Joe-0202/dsh-archive-manager
+> ```
+>
+> 其他安装方式见 [安装](#安装)｜版本下载见 [Releases](https://github.com/Joe-0202/dsh-archive-manager/releases)
 
 ## 为什么需要它
 
@@ -50,19 +62,44 @@ DSH 自带会话归档：归档后会话数据**完整保留在磁盘**，只是
 
 ## 安装
 
-### 本地目录安装
+> 下面命令里的 `<profile>` 换成你的 profile 名；DSH 桌面端默认是 `desktop`。
+> 安装完成后**重启 DSH**，侧边栏底部即出现「归档管理」图标。
+
+### 方式一：从 GitHub 直接安装（推荐，无需 npm）
 
 ```bash
-dsh plugin --profile desktop add link:<本插件目录的绝对路径>
+dsh plugin --profile <profile> add github:Joe-0202/dsh-archive-manager
 ```
 
-### npm 安装（发布后）
+DSH 会从本仓库拉取插件并作为 bundle 装入 profile。想锁定到某个版本可加 ref：
 
 ```bash
-dsh plugin --profile desktop add dsh-archive-manager
+dsh plugin --profile <profile> add github:Joe-0202/dsh-archive-manager#v0.1.0
 ```
 
-安装后重启 DSH，侧边栏底部即出现「归档管理」入口。
+### 方式二：从 Release 下载后本地安装
+
+1. 打开 [Releases](https://github.com/Joe-0202/dsh-archive-manager/releases) 页面，
+   下载最新版的 **Source code (zip)** 并解压
+2. 用解压出的目录路径安装：
+
+```bash
+dsh plugin --profile <profile> add link:<解压目录的绝对路径>
+```
+
+### 方式三：npm（发布后可用）
+
+```bash
+dsh plugin --profile <profile> add dsh-archive-manager
+```
+
+### 卸载
+
+```bash
+dsh plugin --profile <profile> remove dsh-archive-manager
+```
+
+卸载只会移除插件本身，**不会**删除任何会话数据或归档记录。
 
 ## 使用
 
